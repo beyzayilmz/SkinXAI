@@ -42,6 +42,19 @@ CLASS_INFO = {
 HIGH_RISK = {"melanoma", "bcc", "scc", "ak"}
 
 # ============================================================
+# THRESHOLD AYARLARI — False Negative Azaltma
+# ============================================================
+# Melanoma ve diğer riskli sınıflar için threshold düşürüldü.
+# Mantık: model "melanoma ihtimali %20" diyorsa bile melanoma de,
+# çünkü kaçırmanın maliyeti yanlış alarm vermekten çok daha yüksek.
+RISK_THRESHOLDS = {
+    "melanoma": 0.20,   # default 0.50 → false negative azaltır
+    "bcc":      0.25,   # riskli, erken tespiti önemli
+    "scc":      0.22,   # az veri var, threshold düşük tutuldu
+    "ak":       0.25,   # prekanseröz, erken tespit önemli
+}
+
+# ============================================================
 # MODEL MİMARİSİ
 # ============================================================
 class SkinModel(nn.Module):
@@ -162,18 +175,38 @@ def predict_image(image_input, model_path: str = None, use_tta: bool = False):
     else:
         probs = _predict_single(model, device, img, tfm)
 
+    # Önce argmax ile tahmin yap
     pred_idx   = int(np.argmax(probs))
     pred_class = CLASS_NAMES[pred_idx]
-    confidence = float(probs[pred_idx])
 
-    all_probs = {CLASS_NAMES[i]: round(float(probs[i]), 4) for i in range(8)}
+    # Riskli sınıflar için threshold override
+    # Eğer riskli bir sınıfın olasılığı threshold'u geçiyorsa
+    # argmax sonucundan bağımsız olarak o sınıfı seç
+    for risk_class, threshold in RISK_THRESHOLDS.items():
+        risk_idx = CLASS_NAMES.index(risk_class)
+        if probs[risk_idx] >= threshold and risk_class != pred_class:
+            # Birden fazla riskli sınıf varsa en yüksek olasılıklıyı seç
+            if pred_class not in RISK_THRESHOLDS or probs[risk_idx] > probs[CLASS_NAMES.index(pred_class)]:
+                pred_idx   = risk_idx
+                pred_class = risk_class
+                break
+
+    confidence = float(probs[pred_idx])
+    all_probs  = {CLASS_NAMES[i]: round(float(probs[i]), 4) for i in range(8)}
+
+    # Düşük güven uyarısı
+    uncertain = confidence < 0.50 and pred_class not in RISK_THRESHOLDS
 
     is_risk = pred_class in HIGH_RISK
-    warning = (
-        f"⚠️ Bu lezyon potansiyel olarak riskli görünüyor ({CLASS_INFO[pred_class]}). "
-        "Lütfen bir dermatoloğa danışın."
-        if is_risk else None
-    )
+    if is_risk:
+        warning = (
+            f"⚠️ Bu lezyon potansiyel olarak riskli görünüyor ({CLASS_INFO[pred_class]}). "
+            "Lütfen bir dermatoloğa danışın."
+        )
+    elif uncertain:
+        warning = "🔍 Model bu görüntüden emin değil. Daha net bir fotoğraf deneyin veya uzman görüşü alın."
+    else:
+        warning = None
 
     return {
         "predicted_class": pred_class,
@@ -181,6 +214,7 @@ def predict_image(image_input, model_path: str = None, use_tta: bool = False):
         "confidence":      confidence,
         "confidence_pct":  f"{confidence:.1%}",
         "is_high_risk":    is_risk,
+        "is_uncertain":    uncertain,
         "all_probs":       all_probs,
         "warning":         warning,
     }
