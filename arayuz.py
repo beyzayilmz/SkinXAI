@@ -8,9 +8,15 @@ import numpy as np
 # ── Model entegrasyonu ───────────────────────────────────────────
 from predict import predict_image, load_ensemble, CLASS_INFO, HIGH_RISK
 
-V3_PATH     = "skinxai_v3_best.pth"
-V6_PATH     = "skinxai_v6_final.pth"
-EXPERT_PATH = "skinxai_expert_final.pth"
+# Bu dosyanın bulunduğu klasör — yollar her ortamda (yerel + bulut) doğru çözülür
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def _yol(rel):
+    return os.path.join(BASE_DIR, rel)
+
+V3_PATH     = _yol("skinxai_v3_best.pth")
+V6_PATH     = _yol("skinxai_v6_final.pth")
+EXPERT_PATH = _yol("skinxai_expert_final.pth")
 
 @st.cache_resource(show_spinner="Modeller yükleniyor...")
 def modelleri_yukle():
@@ -333,12 +339,12 @@ with sekme_analiz:
         btn_col1, btn_col2, btn_col3 = st.columns(3)
         with btn_col1:
             if st.button("Örnek: Melanom", use_container_width=True):
-                st.session_state.secilen_resim_yolu = "melanom.jpeg"
+                st.session_state.secilen_resim_yolu = _yol("samples/melanoma1.jpg")
                 st.session_state.analiz_yapildi = False
                 st.session_state.analiz_sonucu  = None
         with btn_col2:
             if st.button("Örnek: Nevüs", use_container_width=True):
-                st.session_state.secilen_resim_yolu = "nevus.jpeg"
+                st.session_state.secilen_resim_yolu = _yol("samples/nevus1.jpg")
                 st.session_state.analiz_yapildi = False
                 st.session_state.analiz_sonucu  = None
         with btn_col3:
