@@ -35,67 +35,216 @@ def tahmin_yap(image_input, use_tta=True):
     return result
 # ────────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="DermAI - Cilt Lezyonu Analizi", layout="wide")
+st.set_page_config(page_title="SkinXAI - Cilt Lezyonu Analizi", page_icon="🔬", layout="wide")
 
 koyu_tasarim = """
 <style>
-[data-testid="stAppViewContainer"] { background-color: #1E293B; color: #F8FAFC; }
-[data-testid="stSidebar"] { background-color: #0F172A; border-right: 1px solid #334155; }
-[data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
-h1, h2, h3, h4, h5, h6 { color: #F1F5F9 !important; font-weight: 600 !important; }
-p, li, span, label { color: #CBD5E1 !important; }
-.custom-header {
-    font-size: 22px; font-weight: 600; color: #F8FAFC;
-    border-bottom: 2px solid #334155; padding-bottom: 10px;
-    margin-bottom: 20px; letter-spacing: 0.5px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+/* ── Tipografi ──────────────────────────────────────────────── */
+html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+
+/* ── Animasyonlu gradient arka plan ─────────────────────────── */
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #0B1120 0%, #1E293B 45%, #0F172A 100%);
+    background-size: 200% 200%;
+    animation: arkaplan-kaydir 18s ease infinite;
+    color: #F8FAFC;
 }
+@keyframes arkaplan-kaydir {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+[data-testid="stSidebar"] {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(56, 189, 248, 0.15);
+}
+[data-testid="stHeader"] { background-color: rgba(0,0,0,0); }
+
+h1, h2, h3, h4, h5, h6 {
+    color: #F1F5F9 !important; font-weight: 700 !important;
+    font-family: 'Space Grotesk', 'Inter', sans-serif !important;
+    letter-spacing: -0.3px;
+}
+p, li, span, label { color: #CBD5E1 !important; }
+
+/* ── Genel içerik fade-in ───────────────────────────────────── */
+.block-container { animation: yumusak-giris 0.7s ease both; }
+@keyframes yumusak-giris {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bölüm başlıkları ───────────────────────────────────────── */
+.custom-header {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px; font-weight: 700; color: #F8FAFC;
+    padding-bottom: 10px; margin-bottom: 20px; letter-spacing: 0.3px;
+    position: relative;
+}
+.custom-header::after {
+    content: ""; position: absolute; left: 0; bottom: 0;
+    height: 3px; width: 56px; border-radius: 3px;
+    background: linear-gradient(90deg, #0EA5E9, #38BDF8);
+    box-shadow: 0 0 12px rgba(56,189,248,0.6);
+    animation: cizgi-genisle 1.1s ease both;
+}
+@keyframes cizgi-genisle { from { width: 0; opacity: 0; } to { width: 56px; opacity: 1; } }
+
+/* ── Butonlar ───────────────────────────────────────────────── */
+.stButton > button {
+    border-radius: 10px !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease !important;
+    border: 1px solid rgba(148,163,184,0.25) !important;
+}
+.stButton > button:hover { transform: translateY(-2px) !important; }
 button[kind="primary"] {
     background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%) !important;
+    background-size: 200% auto !important;
     color: white !important; border: none !important;
-    box-shadow: 0px 4px 10px rgba(56, 189, 248, 0.3) !important;
-    font-weight: 600 !important; letter-spacing: 1px !important;
+    box-shadow: 0px 4px 14px rgba(56, 189, 248, 0.35) !important;
+    font-weight: 700 !important; letter-spacing: 1px !important;
 }
 button[kind="primary"]:hover {
-    opacity: 0.9 !important;
-    box-shadow: 0px 4px 15px rgba(56, 189, 248, 0.5) !important;
+    background-position: right center !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0px 8px 24px rgba(56, 189, 248, 0.55) !important;
 }
+
+/* ── Sekmeler ───────────────────────────────────────────────── */
 button[data-baseweb="tab"] {
-    font-size: 18px !important; font-weight: 600 !important;
+    font-size: 17px !important; font-weight: 600 !important;
     color: #94A3B8 !important; background-color: transparent !important;
+    transition: color 0.2s ease !important;
 }
+button[data-baseweb="tab"]:hover { color: #CBD5E1 !important; }
 button[data-baseweb="tab"][aria-selected="true"] {
     color: #38BDF8 !important; border-bottom: 3px solid #38BDF8 !important;
 }
+
+/* ── Logo ───────────────────────────────────────────────────── */
 .logo-badge {
     background: linear-gradient(135deg, #0284C7 0%, #38BDF8 100%);
-    color: white !important; padding: 10px 20px; border-radius: 12px;
+    background-size: 200% 200%;
+    animation: logo-parla 4s ease infinite;
+    color: white !important; padding: 10px 22px; border-radius: 14px;
+    font-family: 'Space Grotesk', sans-serif;
     font-size: 28px; font-weight: 800; margin-right: 15px;
-    letter-spacing: 1px; box-shadow: 0px 0px 15px rgba(56, 189, 248, 0.3);
+    letter-spacing: 1px; box-shadow: 0px 0px 22px rgba(56, 189, 248, 0.45);
 }
+@keyframes logo-parla {
+    0%   { background-position: 0% 50%; box-shadow: 0 0 18px rgba(56,189,248,0.35); }
+    50%  { background-position: 100% 50%; box-shadow: 0 0 28px rgba(56,189,248,0.6); }
+    100% { background-position: 0% 50%; box-shadow: 0 0 18px rgba(56,189,248,0.35); }
+}
+
+/* ── Risk uyarıları ─────────────────────────────────────────── */
 @keyframes yanip-sonme-kirmizi {
   0%   { background-color: rgba(239,68,68,0.1); border: 1px solid #7F1D1D; }
-  50%  { background-color: rgba(239,68,68,0.2); border: 1px solid #DC2626; box-shadow: 0 0 15px rgba(220,38,38,0.4); }
+  50%  { background-color: rgba(239,68,68,0.2); border: 1px solid #DC2626; box-shadow: 0 0 18px rgba(220,38,38,0.5); }
   100% { background-color: rgba(239,68,68,0.1); border: 1px solid #7F1D1D; }
 }
 .kirmizi-risk {
   animation: yanip-sonme-kirmizi 1.5s infinite;
-  color: #FCA5A5 !important; padding: 15px; border-radius: 8px;
+  color: #FCA5A5 !important; padding: 15px; border-radius: 10px;
   font-weight: bold; text-align: center; font-size: 18px; margin-bottom: 15px;
 }
 .kirmizi-risk span { color: #FECACA !important; }
 @keyframes yanip-sonme-sari {
   0%   { background-color: rgba(245,158,11,0.1); border: 1px solid #78350F; }
-  50%  { background-color: rgba(245,158,11,0.2); border: 1px solid #D97706; box-shadow: 0 0 15px rgba(217,119,6,0.4); }
+  50%  { background-color: rgba(245,158,11,0.2); border: 1px solid #D97706; box-shadow: 0 0 18px rgba(217,119,6,0.5); }
   100% { background-color: rgba(245,158,11,0.1); border: 1px solid #78350F; }
 }
 .sari-uyari {
   animation: yanip-sonme-sari 1.5s infinite;
-  color: #FCD34D !important; padding: 15px; border-radius: 8px;
+  color: #FCD34D !important; padding: 15px; border-radius: 10px;
   font-weight: bold; text-align: center; font-size: 18px; margin-bottom: 15px;
 }
 .sari-uyari span { color: #FDE68A !important; }
-[data-testid="stImage"] img { border-radius: 10px; box-shadow: 0px 4px 20px rgba(0,0,0,0.4); border: 1px solid #334155; }
-[data-testid="stExpander"] { background-color: rgba(15,23,42,0.4); border: 1px solid #334155; }
+
+/* ── Güven skoru kartı ──────────────────────────────────────── */
+.guven-karti {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(56,189,248,0.25);
+    border-radius: 14px; padding: 18px 20px; margin: 6px 0 16px 0;
+    backdrop-filter: blur(8px);
+    animation: yumusak-giris 0.6s ease both;
+}
+.guven-karti .etiket {
+    font-size: 13px; color: #94A3B8 !important; text-transform: uppercase;
+    letter-spacing: 1.5px; margin-bottom: 4px;
+}
+.guven-karti .deger {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 38px; font-weight: 700; color: #38BDF8 !important; line-height: 1;
+}
+.guven-bar-dis {
+    background: rgba(148,163,184,0.18); border-radius: 999px;
+    height: 10px; margin-top: 12px; overflow: hidden;
+}
+.guven-bar-ic {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #0EA5E9, #38BDF8);
+    box-shadow: 0 0 12px rgba(56,189,248,0.6);
+    animation: bar-doldur 1.1s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes bar-doldur { from { width: 0; } }
+
+/* ── Görsel & expander ──────────────────────────────────────── */
+[data-testid="stImage"] img {
+    border-radius: 12px; box-shadow: 0px 8px 28px rgba(0,0,0,0.5);
+    border: 1px solid rgba(56,189,248,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+[data-testid="stImage"] img:hover {
+    transform: scale(1.02);
+    box-shadow: 0px 12px 36px rgba(56,189,248,0.25);
+}
+[data-testid="stExpander"] {
+    background-color: rgba(15,23,42,0.45);
+    border: 1px solid rgba(56,189,248,0.15);
+    border-radius: 10px; transition: border-color 0.25s ease;
+}
+[data-testid="stExpander"]:hover { border-color: rgba(56,189,248,0.4); }
+
+/* ── Bilgi/uyarı kutuları ───────────────────────────────────── */
+[data-testid="stAlert"] {
+    border-radius: 10px;
+    animation: yumusak-giris 0.6s ease both;
+}
+
+/* ── SkinXAI logo / marka kimliği ───────────────────────────── */
+.logo-wrap {
+    display: flex; align-items: center; gap: 18px;
+    margin: -12px 0 28px 0;
+    animation: yumusak-giris 0.8s ease both;
+}
+.logo-emblem { filter: drop-shadow(0 0 14px rgba(56,189,248,0.5)); flex-shrink: 0; }
+.logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 34px; font-weight: 800; line-height: 1;
+}
+.logo-text .skin { color: #F1F5F9 !important; }
+.logo-text .xai {
+    background: linear-gradient(90deg, #0EA5E9, #38BDF8, #7DD3FC, #38BDF8, #0EA5E9);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent !important;
+    animation: metin-parla 4s linear infinite;
+}
+@keyframes metin-parla { to { background-position: 200% center; } }
+.logo-sub {
+    font-size: 12px; color: #94A3B8 !important; letter-spacing: 2px;
+    margin-top: 5px; text-transform: uppercase;
+}
+.logo-divider {
+    width: 1px; height: 46px;
+    background: linear-gradient(180deg, transparent, #475569, transparent);
+}
+.logo-tagline {
+    font-size: 21px; color: #94A3B8 !important; font-weight: 500;
+}
 </style>
 """
 st.markdown(koyu_tasarim, unsafe_allow_html=True)
@@ -104,6 +253,7 @@ st.markdown(koyu_tasarim, unsafe_allow_html=True)
 if "secilen_resim_yolu" not in st.session_state: st.session_state.secilen_resim_yolu = None
 if "analiz_yapildi"     not in st.session_state: st.session_state.analiz_yapildi = False
 if "analiz_sonucu"      not in st.session_state: st.session_state.analiz_sonucu = None
+if "img_pil"            not in st.session_state: st.session_state.img_pil = None
 
 # --- YAN MENÜ ---
 with st.sidebar:
@@ -122,14 +272,39 @@ with st.sidebar:
     st.warning("⚠️ Yasal Uyarı: Bu yazılım kesin bir tıbbi tanı aracı değildir.")
 
 # --- LOGO ---
-st.markdown("""
-<div style="display: flex; align-items: center; margin-bottom: 25px; margin-top: -20px;">
-    <div class="logo-badge">🧬 DermAI</div>
-    <div style="font-size: 22px; color: #94A3B8; font-weight: 500; border-left: 2px solid #475569; padding-left: 15px;">
-        Klinik Karar Destek Sistemi
-    </div>
-</div>
-""", unsafe_allow_html=True)
+logo_html = (
+'<div class="logo-wrap">'
+'<svg class="logo-emblem" width="62" height="62" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+'<defs>'
+'<linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">'
+'<stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#38BDF8"/>'
+'</linearGradient>'
+'<radialGradient id="coreGlow" cx="50%" cy="45%" r="55%">'
+'<stop offset="0%" stop-color="#7DD3FC"/><stop offset="100%" stop-color="#0284C7"/>'
+'</radialGradient>'
+'</defs>'
+'<circle cx="50" cy="50" r="46" fill="#38BDF8" opacity="0.06"/>'
+'<circle cx="50" cy="50" r="44" fill="none" stroke="url(#skinGrad)" stroke-width="3" stroke-dasharray="11 9" stroke-linecap="round">'
+'<animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="9s" repeatCount="indefinite"/>'
+'</circle>'
+'<circle cx="50" cy="50" r="32" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="42 130" stroke-linecap="round" opacity="0.65">'
+'<animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="6s" repeatCount="indefinite"/>'
+'</circle>'
+'<circle cx="50" cy="50" r="20" fill="url(#coreGlow)">'
+'<animate attributeName="r" values="18.5;21.5;18.5" dur="2.4s" repeatCount="indefinite"/>'
+'<animate attributeName="opacity" values="0.9;1;0.9" dur="2.4s" repeatCount="indefinite"/>'
+'</circle>'
+'<path d="M38 50 H44 L47 42 L50 58 L53 47 L56 50 H62" fill="none" stroke="#0B1120" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>'
+'<g><circle cx="50" cy="6" r="3.6" fill="#7DD3FC"/>'
+'<animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="3.5s" repeatCount="indefinite"/></g>'
+'</svg>'
+'<div><div class="logo-text"><span class="skin">Skin</span><span class="xai">XAI</span></div>'
+'<div class="logo-sub">Explainable Skin AI</div></div>'
+'<div class="logo-divider"></div>'
+'<div class="logo-tagline">Klinik Karar Destek Sistemi</div>'
+'</div>'
+)
+st.markdown(logo_html, unsafe_allow_html=True)
 
 sekme_analiz, sekme_lezyonlar, sekme_detay, sekme_ekip = st.tabs([
     "🔬 Analiz Paneli", "📚 Lezyon Sınıfları", "📖 Sistem Detayları", "👥 Geliştirici Ekip"
@@ -171,6 +346,7 @@ with sekme_analiz:
                 st.session_state.secilen_resim_yolu = None
                 st.session_state.analiz_yapildi = False
                 st.session_state.analiz_sonucu  = None
+                st.session_state.img_pil        = None
 
         uploaded_file = st.file_uploader(" ", type=["jpg","png","jpeg"], label_visibility="collapsed")
         if uploaded_file is not None:
@@ -183,10 +359,14 @@ with sekme_analiz:
             if st.button("GÖRSELİ ANALİZ ET", type="primary", use_container_width=True):
                 with st.spinner("Analiz yapılıyor..."):
                     img_input = st.session_state.secilen_resim_yolu
-                    # UploadedFile ise PIL Image'e çevir
                     if hasattr(img_input, "read"):
                         img_input = Image.open(img_input).convert("RGB")
+                    elif isinstance(img_input, str):
+                        img_input = Image.open(img_input).convert("RGB")
+
+                    st.session_state.img_pil     = img_input
                     st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
+
                 st.session_state.analiz_yapildi = True
 
     st.divider()
@@ -208,10 +388,8 @@ with sekme_analiz:
         # Görüntü
         with sonuc_col1:
             st.write("#### İncelenen Görüntü")
-            img_goster = st.session_state.secilen_resim_yolu
-            if hasattr(img_goster, "read"):
-                img_goster.seek(0)
-            st.image(img_goster, use_container_width=True)
+            st.image(st.session_state.img_pil or st.session_state.secilen_resim_yolu,
+                     use_container_width=True)
             if cascade_tetiklendi:
                 st.caption("🔄 Cascade (uzman model) devreye girdi")
 
@@ -219,8 +397,15 @@ with sekme_analiz:
         with sonuc_col2:
             st.write(f"### Tahmin: **{tahmin_edilen.upper()}**")
             st.write(f"**{tam_ad}**")
-            st.write(f"#### Güven: %{guven_skoru}")
-            st.write("")
+            st.markdown(f"""
+            <div class="guven-karti">
+                <div class="etiket">Model Güven Skoru</div>
+                <div class="deger">%{guven_skoru}</div>
+                <div class="guven-bar-dis">
+                    <div class="guven-bar-ic" style="width: {guven_skoru}%;"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             if yuksek_risk:
                 st.markdown(f"""
@@ -331,4 +516,8 @@ with sekme_detay:
 # ---------------------------------------------------------
 with sekme_ekip:
     st.markdown('<div class="custom-header">Proje Ekibi</div>', unsafe_allow_html=True)
-    st.write("Bu kısma ekip üyelerinin isimlerini ve iletişim bilgilerini ekleyebilirsiniz.")
+    st.write("**Beyza YILMAZ** - Model Eğitimi, Veri İşleme ve Backend Entegrasyonu")
+    st.write("**Dilara KULOĞLU** - Yapay Zeka Model Mimarisi, Grad-CAM Görselleştirmeleri")
+    st.write("**Fatma Gizem İNANBAK** - Model Eğitimi, Veri İşleme")
+    st.write("**Hatice Ayten KIZILKAYA** - Arayüz Tasarımı, Kullanıcı Deneyimi ve Süreç Optimizasyonu")
+    st.write("**Hüsna Nur YÜKSEL**")
