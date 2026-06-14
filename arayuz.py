@@ -49,17 +49,20 @@ koyu_tasarim = """
 /* ── Tipografi ──────────────────────────────────────────────── */
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
-/* ── Animasyonlu gradient arka plan ─────────────────────────── */
+/* ── Animasyonlu gradient + DNA motifli arka plan ───────────── */
 [data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #0B1120 0%, #1E293B 45%, #0F172A 100%);
-    background-size: 200% 200%;
-    animation: arkaplan-kaydir 18s ease infinite;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='240' viewBox='0 0 120 240'%3E%3Cg fill='none' stroke='%2338BDF8' stroke-opacity='0.12' stroke-width='1.4'%3E%3Cpath d='M60 0 C105 40 105 80 60 120 C15 160 15 200 60 240'/%3E%3Cpath d='M60 0 C15 40 15 80 60 120 C105 160 105 200 60 240'/%3E%3Cline x1='30' y1='60' x2='90' y2='60'/%3E%3Cline x1='42' y1='30' x2='78' y2='30'/%3E%3Cline x1='42' y1='90' x2='78' y2='90'/%3E%3Cline x1='30' y1='180' x2='90' y2='180'/%3E%3Cline x1='42' y1='150' x2='78' y2='150'/%3E%3Cline x1='42' y1='210' x2='78' y2='210'/%3E%3C/g%3E%3Cg fill='%2338BDF8' fill-opacity='0.14'%3E%3Ccircle cx='60' cy='0' r='2.5'/%3E%3Ccircle cx='60' cy='120' r='2.5'/%3E%3Ccircle cx='60' cy='240' r='2.5'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(135deg, #0B1120 0%, #1E293B 45%, #0F172A 100%);
+    background-size: 95px 190px, 200% 200%;
+    background-repeat: repeat, no-repeat;
+    animation: arkaplan-kaydir 40s linear infinite;
     color: #F8FAFC;
 }
 @keyframes arkaplan-kaydir {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0%   { background-position: 0px 0px,    0% 50%; }
+    50%  { background-position: 0px 95px,   100% 50%; }
+    100% { background-position: 0px 190px,  0% 50%; }
 }
 [data-testid="stSidebar"] {
     background: rgba(15, 23, 42, 0.7);
