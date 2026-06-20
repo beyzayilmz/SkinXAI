@@ -382,7 +382,7 @@ with sekme_analiz:
         btn_col1, btn_col2, btn_col3 = st.columns(3)
         with btn_col1:
             if st.button("Örnek: Melanom", use_container_width=True):
-                st.session_state.secilen_resim_yolu = _yol("samples/melanoma1.jpg")
+                st.session_state.secilen_resim_yolu = _yol("samples/melanoma.jpg")
                 st.session_state.analiz_yapildi = False
                 st.session_state.analiz_sonucu  = None
         with btn_col2:
