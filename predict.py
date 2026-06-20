@@ -74,7 +74,7 @@ CASCADE_TRIGGER = {"ak", "bkl", "scc"}
 # Her sınıf için ayrı (v3_ağırlık, v6_ağırlık) — toplam 1.0
 CLASS_ENSEMBLE_WEIGHTS = {
     "melanoma": (0.70, 0.30),   # v3 ağır — v3 melanomada daha iyi
-    "ak":       (0.80, 0.20),   # v3 ağır — v3 ak'ta çok daha iyi
+    "ak":       (0.05, 0.95),   # düzeltildi — temiz veride v3 ak'ta %0, v6'ya güven
     "bcc":      (0.10, 0.90),   # v6 ağır — v6 bcc=96.4%
     "bkl":      (0.10, 0.90),   # v6 ağır — v6 bkl=87.3%
     "scc":      (0.30, 0.70),   # v6 ağır — cascade zaten düzeltiyor
