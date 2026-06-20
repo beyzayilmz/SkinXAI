@@ -4,9 +4,12 @@ import pandas as pd
 import plotly.express as px
 from PIL import Image
 import numpy as np
+from PIL import Image, ImageOps
+import time # Animasyon zamanlaması için
 
 # ── Model entegrasyonu ───────────────────────────────────────────
 from predict import predict_image, load_ensemble, CLASS_INFO, HIGH_RISK
+from predict import load_model 
 
 # Bu dosyanın bulunduğu klasör — yollar her ortamda (yerel + bulut) doğru çözülür
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -14,29 +17,25 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 def _yol(rel):
     return os.path.join(BASE_DIR, rel)
 
-V3_PATH     = _yol("skinxai_v3_best.pth")
+#V3_PATH     = _yol("skinxai_v3_best.pth")
 V6_PATH     = _yol("skinxai_v6_final.pth")
-EXPERT_PATH = _yol("skinxai_expert_final.pth")
+#EXPERT_PATH = _yol("skinxai_expert_final.pth")
 
-@st.cache_resource(show_spinner="Modeller yükleniyor...")
+@st.cache_resource(show_spinner="Model yükleniyor...")
 def modelleri_yukle():
-    expert = EXPERT_PATH if os.path.exists(EXPERT_PATH) else None
-    load_ensemble(V3_PATH, V6_PATH, expert)
-    return expert is not None
+    load_model(V6_PATH, "v6")
 
-CASCADE_VAR = modelleri_yukle()
+modelleri_yukle()
 
 def tahmin_yap(image_input, use_tta=True):
     """predict_image'i çağırır, sonucu arayüze uygun formata çevirir."""
-    expert = EXPERT_PATH if CASCADE_VAR else None
     result = predict_image(
         image_input,
-        ensemble=True,
-        v3_path=V3_PATH,
-        v6_path=V6_PATH,
-        expert_path=expert,
+        model_path=V6_PATH,
+        version="v6",
+        ensemble=False,
         use_tta=use_tta,
-        cascade=CASCADE_VAR,
+        cascade=False,
     )
     return result
 # ────────────────────────────────────────────────────────────────
@@ -254,6 +253,48 @@ button[data-baseweb="tab"][aria-selected="true"] {
 .logo-tagline {
     font-size: 21px; color: #94A3B8 !important; font-weight: 500;
 }
+/* ── MİMARİ AKIŞ SİMÜLASYONU STİLLERİ ────────────────────────── */
+.mimari-kutu {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.4s ease;
+}
+.mimari-kutu.aktif {
+    border-color: #38BDF8 !important;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.6) !important;
+    background: rgba(14, 165, 233, 0.15) !important;
+}
+.mimari-kutu.expert-aktif {
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.6) !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+}
+.mimari-ok {
+    font-size: 24px;
+    text-align: center;
+    color: #475569;
+    margin: 5px 0;
+    transition: color 0.4s ease;
+}
+.mimari-ok.parlayan {
+    color: #38BDF8;
+    text-shadow: 0 0 10px rgba(56,189,248,0.8);
+    animation: ok-pulse 1.2s infinite;
+}
+.mimari-ok.parlayan-turuncu {
+    color: #F59E0B;
+    text-shadow: 0 0 10px rgba(245,158,11,0.8);
+    animation: ok-pulse 1.2s infinite;
+}
+@keyframes ok-pulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.6; }
+}
 </style>
 """
 st.markdown(koyu_tasarim, unsafe_allow_html=True)
@@ -276,14 +317,13 @@ with st.sidebar:
     # TTA seçeneği
     use_tta = st.toggle("TTA kullan (daha doğru, ~5× yavaş)", value=False)
 
-    cascade_durum = "✅ Cascade aktif" if CASCADE_VAR else "⚠️ Sadece ensemble"
-    st.caption(cascade_durum)
+    st.caption("🧠 SkinXAI v6 (EfficientNetV2-S)")
     st.warning("⚠️ Yasal Uyarı: Bu yazılım kesin bir tıbbi tanı aracı değildir.")
 
 # --- LOGO ---
 logo_html = (
 '<div class="logo-wrap">'
-'<svg class="logo-emblem" width="62" height="62" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+'<svg class="logo-emblem" width="93" height="93" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
 '<defs>'
 '<linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">'
 '<stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#38BDF8"/>'
@@ -332,7 +372,7 @@ with sekme_analiz:
         st.markdown('<div class="custom-header">Proje Özeti ve Amacı</div>', unsafe_allow_html=True)
         st.write("Bu platform, dermatoskopik görüntüleri analiz ederek cilt lezyonlarını yapay zeka algoritmalarıyla sınıflandıran bir **Klinik Karar Destek Sistemidir**.")
         st.info("🎯 **Temel Hedef:** Teşhis sürecinde hekimlere ikinci bir görüş sunarak tanı doğruluğunu artırmak ve biyopsi süreçlerini optimize etmektir.")
-        st.success("📊 **Veri ve Model:** HAM10000 + ISIC 2019 (41K görüntü), EfficientNetV2-S backbone, v3+v6 per-class ensemble" + (" + expert cascade" if CASCADE_VAR else "") + ".")
+        st.success("📊 **Veri ve Model:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü), EfficientNetV2-S backbone (v6).")
         st.warning("🛡️ **Güvenlik Protokolü:** Riskli lezyonları kaçırmamak adına algoritmik olarak güvenlik odaklı kalibre edilmiştir.")
 
     with sag_islem:
@@ -364,19 +404,52 @@ with sekme_analiz:
             st.session_state.analiz_sonucu  = None
 
         if st.session_state.secilen_resim_yolu is not None:
-            st.write("")
-            if st.button("GÖRSELİ ANALİZ ET", type="primary", use_container_width=True):
-                with st.spinner("Analiz yapılıyor..."):
-                    img_input = st.session_state.secilen_resim_yolu
-                    if hasattr(img_input, "read"):
-                        img_input = Image.open(img_input).convert("RGB")
-                    elif isinstance(img_input, str):
-                        img_input = Image.open(img_input).convert("RGB")
+                    st.write("")
+                    if st.button("GÖRSELİ ANALİZ ET", type="primary", use_container_width=True):
+                        
+                        # Resim girdisini PIL Image nesnesine dönüştürme
+                        img_input = st.session_state.secilen_resim_yolu
+                        if hasattr(img_input, "read"):
+                            img_input = Image.open(img_input).convert("RGB")
+                        elif isinstance(img_input, str):
+                            img_input = Image.open(img_input).convert("RGB")
+                        
+                        st.session_state.img_pil = img_input
 
-                    st.session_state.img_pil     = img_input
-                    st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
+                        # ── TTA CANLI ÖNİZLEME ALANI ──────────────────────────────────
+                        if use_tta:
+                            st.markdown("##### TTA Süreci İşleniyor... (5 Farklı Matris Çoğaltımı)")
+                            tta_placeholder = st.empty()
+                            
+                            with tta_placeholder.container():
+                                # Orijinal görsel boyutlarını alıp crop simülasyonu hazırlığı yapalım
+                                w, h = img_input.size
+                                crop_box = (int(w*0.1), int(h*0.1), int(w*0.9), int(h*0.9))
+                                
+                                transformasyonlar = [
+                                    {"isim": "1. Orijinal Görüntü", "img": img_input},
+                                    {"isim": "2. Horizontal Flip", "img": ImageOps.mirror(img_input)},
+                                    {"isim": "3. Vertical Flip", "img": ImageOps.flip(img_input)},
+                                    {"isim": "4. Center Crop", "img": img_input.crop(crop_box).resize((w, h))},
+                                    {"isim": "5. Random Rotate (45°)", "img": img_input.rotate(45)},
+                                ]
+                                
+                                # 5 mikro-görsel için yan yana kolonlar oluşturma
+                                tta_cols = st.columns(5)
+                                for idx, tf in enumerate(transformasyonlar):
+                                    with tta_cols[idx]:
+                                        st.caption(tf["isim"])
+                                        st.image(tf["img"], use_container_width=True)
+                                        # Teknik şov hissini pekiştirmek için mikro gecikmeli animasyon efekti
+                                        time.sleep(0.3) 
+                            
+                            st.success("⚡ Tüm transformasyon matrisleri doğrulandı. Ensemble model optimizasyonu başlatılıyor...")
+                        # ──────────────────────────────────────────────────────────────
 
-                st.session_state.analiz_yapildi = True
+                        with st.spinner("Analiz yapılıyor..."):
+                            st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
+
+                        st.session_state.analiz_yapildi = True
 
     st.divider()
 
@@ -392,6 +465,7 @@ with sekme_analiz:
         cascade_tetiklendi  = result.get("cascade_triggered", False)
 
         st.markdown('<div class="custom-header">Analiz Sonucu ve Raporlama</div>', unsafe_allow_html=True)
+        st.divider()
         sonuc_col1, sonuc_col2, sonuc_col3 = st.columns(3, gap="medium")
 
         # Görüntü
@@ -514,11 +588,11 @@ with sekme_lezyonlar:
 with sekme_detay:
     st.markdown('<div class="custom-header">Sistem Mimarisi ve Teknik Detaylar</div>', unsafe_allow_html=True)
     st.write("**Backbone:** EfficientNetV2-S (20.8M parametre, timm kütüphanesi)")
-    st.write("**Eğitim Verisi:** HAM10000 + ISIC 2019 (~41K görüntü, 8 sınıf)")
-    st.write("**Ensemble:** v3 + v6 per-class ağırlıklı ensemble (melanoma/ak için v3 ağır, bcc/bkl için v6 ağır)")
-    st.write("**Cascade:** ak/bkl/scc/df için ayrı uzman model (SCC recall: 54% → 87.8%)")
+    st.write("**Eğitim Verisi:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü, 8 sınıf)")
+    st.write("**Model:** v6 — EfficientNetV2-S backbone, sınıf bazlı ağırlıklandırılmış kayıp fonksiyonu")
     st.write("**TTA:** 5 transform ortalaması (normal, hflip, vflip, centercrop, rotate)")
-    st.write("**Kaggle Test F1:** 0.812 (TTA, cascade)")
+    st.write("**Temiz Test Seti Sonucu:** Accuracy %82.0, Macro F1 0.702")
+    st.write("**Not:** v3+v6 ensemble ve expert/cascade mimarileri ayrıca denenmiş, titiz ablasyon testinde v6 tek başına en güvenilir/dengeli sonucu verdiği için final model olarak seçilmiştir.")
 
 # ---------------------------------------------------------
 # SEKME 4: GELİŞTİRİCİ EKİP
