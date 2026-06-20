@@ -290,6 +290,7 @@ def _per_class_ensemble(p3: np.ndarray, p6: np.ndarray) -> np.ndarray:
 def predict_image(
     image_input,
     model_path: str = None,
+    version: str = "v3",
     v3_path: str = None,
     v6_path: str = None,
     expert_path: str = None,
@@ -369,7 +370,7 @@ def predict_image(
         # Tek model — geriye dönük uyumlu
         if model_path is None:
             model_path = os.environ.get("MODEL_PATH", "skinxai_v3_best.pth")
-        model, device = load_model(model_path, "v3")
+        model, device = load_model(model_path, version)
         probs = _infer_tta(model, device, img) if use_tta else _infer_single(model, device, img, tfm)
         mode  = "single"
 
@@ -403,19 +404,21 @@ def predict_image(
         exp_pred_class = EXPERT_CLASS_NAMES[exp_pred_idx]
         exp_confidence = float(exp_raw[exp_pred_idx])
 
-        # Cascade kararı: expert güvenilir ise (>0.40) override et
+        # Cascade kararı: hard override yerine soft blend
         if exp_confidence >= 0.40:
-            pred_class   = exp_pred_class
-            pred_idx     = CLASS_NAMES.index(pred_class)
+            alpha = 0.6  # expert modele ne kadar güveneceğimiz
+            for cls in EXPERT_CLASS_NAMES:  # ak, bkl, scc
+                idx = CLASS_NAMES.index(cls)
+                probs[idx] = (1 - alpha) * probs[idx] + alpha * expert_probs[cls]
+            probs = probs / probs.sum()
+
+            pred_idx   = int(np.argmax(probs))
+            pred_class = CLASS_NAMES[pred_idx]
             cascade_triggered = True
-            mode         = "cascade"
+            mode = "cascade"
 
     # ── Güven skoru ───────────────────────────────────────────
-    # Cascade'de expert confidence'ı kullan, değilse Stage 1 confidence
-    if cascade_triggered and expert_probs is not None:
-        confidence = float(expert_probs[pred_class])
-    else:
-        confidence = float(probs[pred_idx])
+    confidence = float(probs[pred_idx])
 
     # ── Riskli sınıf uyarıları (Stage 1 olasılıklarına göre) ─
     risk_warnings = []
