@@ -9,7 +9,8 @@ import time # Animasyon zamanlaması için
 
 # ── Model entegrasyonu ───────────────────────────────────────────
 from predict import predict_image, load_ensemble, CLASS_INFO, HIGH_RISK
-from predict import load_model 
+from predict import load_model, CLASS_NAMES
+from gradcam import generate_gradcam
 
 # Bu dosyanın bulunduğu klasör — yollar her ortamda (yerel + bulut) doğru çözülür
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -304,6 +305,7 @@ if "secilen_resim_yolu" not in st.session_state: st.session_state.secilen_resim_
 if "analiz_yapildi"     not in st.session_state: st.session_state.analiz_yapildi = False
 if "analiz_sonucu"      not in st.session_state: st.session_state.analiz_sonucu = None
 if "img_pil"            not in st.session_state: st.session_state.img_pil = None
+if "gradcam_overlay"    not in st.session_state: st.session_state.gradcam_overlay = None
 
 # --- YAN MENÜ ---
 with st.sidebar:
@@ -396,6 +398,7 @@ with sekme_analiz:
                 st.session_state.analiz_yapildi = False
                 st.session_state.analiz_sonucu  = None
                 st.session_state.img_pil        = None
+                st.session_state.gradcam_overlay = None
 
         uploaded_file = st.file_uploader(" ", type=["jpg","png","jpeg"], label_visibility="collapsed")
         if uploaded_file is not None:
@@ -449,11 +452,24 @@ with sekme_analiz:
                         with st.spinner("Analiz yapılıyor..."):
                             st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
 
+                        # ── AÇIKLANABİLİRLİK: Grad-CAM ısı haritası ──────────────
+                        with st.spinner("Açıklanabilirlik haritası (Grad-CAM) oluşturuluyor..."):
+                            try:
+                                model_v6, _ = load_model(V6_PATH, "v6")
+                                gc = generate_gradcam(
+                                    model_v6, img_input,
+                                    class_name=st.session_state.analiz_sonucu["predicted_class"],
+                                )
+                                st.session_state.gradcam_overlay = gc["overlay"]
+                            except Exception as e:
+                                st.session_state.gradcam_overlay = None
+                                st.warning(f"Grad-CAM oluşturulamadı: {e}")
+
                         st.session_state.analiz_yapildi = True
 
     st.divider()
 
-    # ── SONUÇ EKRANI ─────────────────────────────────────────────
+    # SONUÇ EKRANI 
     if st.session_state.analiz_yapildi and st.session_state.analiz_sonucu is not None:
         result = st.session_state.analiz_sonucu
 
@@ -475,6 +491,27 @@ with sekme_analiz:
                      use_container_width=True)
             if cascade_tetiklendi:
                 st.caption("🔄 Cascade (uzman model) devreye girdi")
+
+            #AÇIKLANABİLİRLİK: Grad-CAM ısı haritası
+            if st.session_state.gradcam_overlay is not None:
+                st.write("#### Modelin Odak Haritası (Grad-CAM)")
+                st.image(st.session_state.gradcam_overlay, use_container_width=True)
+                st.markdown(
+                    f"""
+Bu görsel, modelin **{tahmin_edilen.upper()}** sonucuna varırken fotoğrafın
+hangi bölgesine baktığını gösterir. Renkler şu anlama gelir:
+
+- **Kırmızı bölgeler:** Modelin kararını verirken en çok önem verdiği,
+  belirleyici alanlardır.
+- **Sarı ve yeşil bölgeler:** Daha az etkili olan, orta önemdeki alanlardır.
+- **Mavi bölgeler:** Modelin pek dikkate almadığı, kararına etkisi az olan
+  alanlardır; çoğunlukla lezyonun çevresindeki sağlıklı cilt buraya düşer.
+
+Beklenen durum, kırmızı bölgelerin lezyonun kendisi üzerinde toplanmasıdır.
+Eğer model lezyon yerine kenarlara, kıllara ya da sağlıklı cilde
+odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
+"""
+                )
 
         # Tahmin ve uyarı
         with sonuc_col2:
