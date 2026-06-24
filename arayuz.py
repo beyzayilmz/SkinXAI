@@ -492,27 +492,6 @@ with sekme_analiz:
             if cascade_tetiklendi:
                 st.caption("🔄 Cascade (uzman model) devreye girdi")
 
-            #AÇIKLANABİLİRLİK: Grad-CAM ısı haritası
-            if st.session_state.gradcam_overlay is not None:
-                st.write("#### Modelin Odak Haritası (Grad-CAM)")
-                st.image(st.session_state.gradcam_overlay, use_container_width=True)
-                st.markdown(
-                    f"""
-Bu görsel, modelin **{tahmin_edilen.upper()}** sonucuna varırken fotoğrafın
-hangi bölgesine baktığını gösterir. Renkler şu anlama gelir:
-
-- **Kırmızı bölgeler:** Modelin kararını verirken en çok önem verdiği,
-  belirleyici alanlardır.
-- **Sarı ve yeşil bölgeler:** Daha az etkili olan, orta önemdeki alanlardır.
-- **Mavi bölgeler:** Modelin pek dikkate almadığı, kararına etkisi az olan
-  alanlardır; çoğunlukla lezyonun çevresindeki sağlıklı cilt buraya düşer.
-
-Beklenen durum, kırmızı bölgelerin lezyonun kendisi üzerinde toplanmasıdır.
-Eğer model lezyon yerine kenarlara, kıllara ya da sağlıklı cilde
-odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
-"""
-                )
-
         # Tahmin ve uyarı
         with sonuc_col2:
             st.write(f"### Tahmin: **{tahmin_edilen.upper()}**")
@@ -586,6 +565,32 @@ odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
                 font=dict(color="#CBD5E1"),
             )
             st.plotly_chart(fig, use_container_width=True)
+
+        # AÇIKLANABİLİRLİK: Grad-CAM — kolonların altında, görsel solda + metin sağda
+        if st.session_state.gradcam_overlay is not None:
+            st.write("")
+            st.divider()
+            st.write("#### Modelin Odak Haritası (Grad-CAM)")
+            gradcam_gorsel, gradcam_metin = st.columns([1, 1.3], gap="large")
+            with gradcam_gorsel:
+                st.image(st.session_state.gradcam_overlay, use_container_width=True)
+            with gradcam_metin:
+                st.markdown(
+                    f"""
+Bu görsel, modelin **{tahmin_edilen.upper()}** sonucuna varırken fotoğrafın
+hangi bölgesine baktığını gösterir. Renkler şu anlama gelir:
+
+- **Kırmızı bölgeler:** Modelin kararını verirken en çok önem verdiği,
+  belirleyici alanlardır.
+- **Sarı ve yeşil bölgeler:** Daha az etkili olan, orta önemdeki alanlardır.
+- **Mavi bölgeler:** Modelin pek dikkate almadığı, kararına etkisi az olan
+  alanlardır; çoğunlukla lezyonun çevresindeki sağlıklı cilt buraya düşer.
+
+Beklenen durum, kırmızı bölgelerin lezyonun kendisi üzerinde toplanmasıdır.
+Eğer model lezyon yerine kenarlara, kıllara ya da sağlıklı cilde
+odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
+"""
+                )
 
 # ---------------------------------------------------------
 # SEKME 2: LEZYON SINIFLARI
