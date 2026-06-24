@@ -37,9 +37,8 @@ import torch.nn.functional as F
 from predict import _base_tfm, _img_to_numpy, CLASS_NAMES
 
 
-# ============================================================
 # HEDEF KATMAN SEÇİMİ
-# ============================================================
+
 def _find_target_layer(model):
     """
     Grad-CAM için son uzamsal (H×W) evrişim katmanını bulur.
@@ -57,9 +56,8 @@ def _find_target_layer(model):
     raise RuntimeError("Grad-CAM için uygun hedef katman bulunamadı.")
 
 
-# ============================================================
 # GRAD-CAM MOTORU
-# ============================================================
+
 class GradCAM:
     """
     Bir modele forward/backward hook bağlayıp Grad-CAM haritası üretir.
@@ -115,9 +113,6 @@ class GradCAM:
         return cam, class_idx
 
 
-# ============================================================
-# YÜKSEK SEVİYE YARDIMCI
-# ============================================================
 def generate_gradcam(model, image_input, class_name=None, class_idx=None,
                      alpha=0.45, colormap=cv2.COLORMAP_JET):
     """
@@ -163,9 +158,9 @@ def generate_gradcam(model, image_input, class_name=None, class_idx=None,
     }
 
 
-# ============================================================
+
 # CLI — hızlı test
-# ============================================================
+
 if __name__ == "__main__":
     import sys
     from predict import load_model

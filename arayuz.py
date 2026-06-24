@@ -319,8 +319,8 @@ with st.sidebar:
     # TTA seçeneği
     use_tta = st.toggle("TTA kullan (daha doğru, ~5× yavaş)", value=False)
 
-    st.caption("🧠 SkinXAI v6 (EfficientNetV2-S)")
-    st.warning("⚠️ Yasal Uyarı: Bu yazılım kesin bir tıbbi tanı aracı değildir.")
+    st.caption(":material/neurology: SkinXAI v6 (EfficientNetV2-S)")
+    st.warning("Yasal Uyarı: Bu yazılım kesin bir tıbbi tanı aracı değildir.", icon=":material/warning:")
 
 # --- LOGO ---
 logo_html = (
@@ -358,7 +358,8 @@ logo_html = (
 st.markdown(logo_html, unsafe_allow_html=True)
 
 sekme_analiz, sekme_lezyonlar, sekme_detay, sekme_ekip = st.tabs([
-    "🔬 Analiz Paneli", "📚 Lezyon Sınıfları", "📖 Sistem Detayları", "👥 Geliştirici Ekip"
+    ":material/biotech: Analiz Paneli", ":material/menu_book: Lezyon Sınıfları",
+    ":material/description: Sistem Detayları", ":material/groups: Geliştirici Ekip"
 ])
 
 # ---------------------------------------------------------
@@ -373,9 +374,9 @@ with sekme_analiz:
     with sol_islem:
         st.markdown('<div class="custom-header">Proje Özeti ve Amacı</div>', unsafe_allow_html=True)
         st.write("Bu platform, dermatoskopik görüntüleri analiz ederek cilt lezyonlarını yapay zeka algoritmalarıyla sınıflandıran bir **Klinik Karar Destek Sistemidir**.")
-        st.info("🎯 **Temel Hedef:** Teşhis sürecinde hekimlere ikinci bir görüş sunarak tanı doğruluğunu artırmak ve biyopsi süreçlerini optimize etmektir.")
-        st.success("📊 **Veri ve Model:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü), EfficientNetV2-S backbone (v6).")
-        st.warning("🛡️ **Güvenlik Protokolü:** Riskli lezyonları kaçırmamak adına algoritmik olarak güvenlik odaklı kalibre edilmiştir.")
+        st.info("**Temel Hedef:** Teşhis sürecinde hekimlere ikinci bir görüş sunarak tanı doğruluğunu artırmak ve biyopsi süreçlerini optimize etmektir.", icon=":material/target:")
+        st.success("**Veri ve Model:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü), EfficientNetV2-S backbone (v6).", icon=":material/bar_chart:")
+        st.warning("**Güvenlik Protokolü:** Riskli lezyonları kaçırmamak adına algoritmik olarak güvenlik odaklı kalibre edilmiştir.", icon=":material/shield:")
 
     with sag_islem:
         st.markdown('<div class="custom-header">Teşhis ve Analiz Motoru</div>', unsafe_allow_html=True)
@@ -446,7 +447,7 @@ with sekme_analiz:
                                         # Teknik şov hissini pekiştirmek için mikro gecikmeli animasyon efekti
                                         time.sleep(0.3) 
                             
-                            st.success("⚡ Tüm transformasyon matrisleri doğrulandı. Ensemble model optimizasyonu başlatılıyor...")
+                            st.success("Tüm transformasyon matrisleri doğrulandı. Ensemble model optimizasyonu başlatılıyor...", icon=":material/bolt:")
                         # ──────────────────────────────────────────────────────────────
 
                         with st.spinner("Analiz yapılıyor..."):
@@ -490,7 +491,7 @@ with sekme_analiz:
             st.image(st.session_state.img_pil or st.session_state.secilen_resim_yolu,
                      use_container_width=True)
             if cascade_tetiklendi:
-                st.caption("🔄 Cascade (uzman model) devreye girdi")
+                st.caption(":material/sync: Cascade (uzman model) devreye girdi")
 
         # Tahmin ve uyarı
         with sonuc_col2:
@@ -520,7 +521,7 @@ with sekme_analiz:
                 Genel tahmin: {tahmin_edilen} — ancak {CLASS_INFO[uyari_cls]} olasılığı %{int(uyari_prob*100)} seviyesinde. Kontrol önerilir.</span></div>
                 """, unsafe_allow_html=True)
             else:
-                st.success("✅ Riskli bir bulguya rastlanmadı.")
+                st.success("Riskli bir bulguya rastlanmadı.", icon=":material/check_circle:")
 
             # Expert probs (cascade varsa)
             if result.get("expert_probs"):
@@ -528,7 +529,7 @@ with sekme_analiz:
                 for cls, prob in sorted(result["expert_probs"].items(), key=lambda x: -x[1]):
                     st.caption(f"{cls}: %{int(prob*100)}")
 
-            st.warning("⚠️ **Yasal Uyarı:** Bu analiz kesin tıbbi tanı koymaz.")
+            st.warning("**Yasal Uyarı:** Bu analiz kesin tıbbi tanı koymaz.", icon=":material/warning:")
 
         # Grafik — tüm 8 sınıf
         with sonuc_col3:
@@ -613,7 +614,7 @@ with sekme_lezyonlar:
     kanser_kolon, iyi_huylu_kolon = st.columns(2, gap="large")
 
     with kanser_kolon:
-        st.error("🚨 Yüksek Riskli Sınıflar (Malign / Prekanseröz)")
+        st.error("Yüksek Riskli Sınıflar (Malign / Prekanseröz)", icon=":material/emergency:")
         lezyon_karti(
             "1. MELANOMA", "melanoma.jpg",
             "En tehlikeli cilt kanseridir; genellikle mevcut bir benin değişmesiyle "
@@ -649,7 +650,7 @@ with sekme_lezyonlar:
         )
 
     with iyi_huylu_kolon:
-        st.success("🟢 Düşük Riskli Sınıflar (Benign / İyi Huylu)")
+        st.success("Düşük Riskli Sınıflar (Benign / İyi Huylu)", icon=":material/check_circle:")
         lezyon_karti(
             "5. NEVUS (Melanositik Nevüs)", "nevus1.jpg",
             "Halk arasında 'ben' olarak bilinen, çoğu insanda bulunan zararsız "
