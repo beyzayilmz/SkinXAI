@@ -600,29 +600,85 @@ with sekme_lezyonlar:
     st.write("Yapay zeka modelimiz aşağıdaki 8 farklı cilt lezyonu türünü analiz edebilecek şekilde eğitilmiştir:")
     st.write("<br>", unsafe_allow_html=True)
 
+    def lezyon_karti(baslik, resim, aciklama, expanded=False):
+        """Açılır kutu içinde solda örnek görsel, sağda açıklama gösterir."""
+        with st.expander(baslik, expanded=expanded):
+            resim_kol, metin_kol = st.columns([1, 1.6], gap="medium")
+            with resim_kol:
+                st.image(_yol(f"samples/{resim}"), use_container_width=True)
+                st.caption("Örnek görüntü")
+            with metin_kol:
+                st.write(aciklama)
+
     kanser_kolon, iyi_huylu_kolon = st.columns(2, gap="large")
 
     with kanser_kolon:
         st.error("🚨 Yüksek Riskli Sınıflar (Malign / Prekanseröz)")
-        with st.expander("1. MELANOMA", expanded=True):
-            st.write("Hızlı yayılan en tehlikeli cilt kanseridir. Asimetrik yapılı ve çok renklidir.")
-        with st.expander("2. BCC (Bazal Hücreli Karsinom)"):
-            st.write("En sık görülen, yavaş büyüyen cilt kanseridir. Parlak, iyileşmeyen yara şeklindedir.")
-        with st.expander("3. SCC (Skuamöz Hücreli Karsinom)"):
-            st.write("Güneş hasarı kaynaklıdır. Pullu, kabuklu lezyonlar olarak ortaya çıkar.")
-        with st.expander("4. AK (Aktinik Keratoz)"):
-            st.write("Kanser öncüsü (prekanseröz) riskli bir lekedir.")
+        lezyon_karti(
+            "1. MELANOMA", "melanoma.jpg",
+            "En tehlikeli cilt kanseridir; genellikle mevcut bir benin değişmesiyle "
+            "ya da yeni çıkan koyu bir lekeyle başlar. Şüphe uyandıran işaretler: "
+            "asimetrik (iki yarısı birbirine benzemeyen) şekil, düzensiz/tırtıklı "
+            "kenarlar, birden fazla renk (kahverengi, siyah, kırmızı) ve zamanla "
+            "büyüyen, kaşınan ya da kanayan lekeler. Erken yakalandığında tedavi "
+            "şansı yüksektir; bu yüzden değişen benler vakit kaybetmeden hekime "
+            "gösterilmelidir.",
+            expanded=True,
+        )
+        lezyon_karti(
+            "2. BCC (Bazal Hücreli Karsinom)", "bcc1.jpg",
+            "En sık görülen cilt kanseridir, ancak yavaş büyür ve çok nadiren "
+            "vücuda yayılır. Genelde yüz, burun ve kulak gibi güneş gören "
+            "bölgelerde çıkar. Parlak, inci tanesi gibi küçük bir kabarcık veya "
+            "kabuk bağlayıp tekrar açılan, bir türlü iyileşmeyen bir yara şeklinde "
+            "görülebilir. Erken tedavide sonuçları çok iyidir.",
+        )
+        lezyon_karti(
+            "3. SCC (Skuamöz Hücreli Karsinom)", "scc1.jpg",
+            "Uzun yıllar süren güneş hasarına bağlı gelişir. Pullu, kabuklu, "
+            "kırmızımsı ve sert bir kabartı ya da iyileşmeyen bir yara olarak "
+            "ortaya çıkar; zaman zaman hassas veya ağrılı olabilir. BCC'ye göre "
+            "yayılma ihtimali daha yüksektir, bu nedenle erken kontrol önemlidir.",
+        )
+        lezyon_karti(
+            "4. AK (Aktinik Keratoz)", "ak1.jpg",
+            "Henüz kanser değildir ama kanser öncüsü (prekanseröz) kabul edilir; "
+            "tedavi edilmezse zamanla SCC'ye dönüşebilir. Genellikle yüz, saçlı "
+            "deri ve el sırtı gibi yıllarca güneş alan yerlerde görülen, kuru, "
+            "pütürlü, dokunulduğunda zımpara hissi veren küçük pullu lekelerdir.",
+        )
 
     with iyi_huylu_kolon:
         st.success("🟢 Düşük Riskli Sınıflar (Benign / İyi Huylu)")
-        with st.expander("5. NEVUS (Melanositik Nevüs)", expanded=True):
-            st.write("Halk arasında 'ben' olarak bilinen tamamen zararsız lekelerdir.")
-        with st.expander("6. BKL (Benign Keratoz)"):
-            st.write("İlerleyen yaşlarda görülen zararsız doku büyümeleridir.")
-        with st.expander("7. DF (Dermatofibrom)"):
-            st.write("Böcek ısırığı sonrası oluşan sert ve zararsız küçük nodüllerdir.")
-        with st.expander("8. VASC (Vasküler Lezyonlar)"):
-            st.write("'Çilek lekesi' gibi damar genişlemesi sonucu oluşan zararsız kızarıklıklardır.")
+        lezyon_karti(
+            "5. NEVUS (Melanositik Nevüs)", "nevus1.jpg",
+            "Halk arasında 'ben' olarak bilinen, çoğu insanda bulunan zararsız "
+            "lekelerdir. Genellikle düzgün yuvarlak veya oval, tek renkli ve "
+            "sınırları belirgindir. Yıllar içinde şekli, rengi veya boyutu "
+            "belirgin biçimde değişmediği sürece endişe gerektirmez; değişiyorsa "
+            "bir hekime gösterilmesi önerilir.",
+            expanded=True,
+        )
+        lezyon_karti(
+            "6. BKL (Benign Keratoz)", "bkl1.jpg",
+            "Genellikle orta ve ileri yaşta ortaya çıkan, cilde sonradan "
+            "'yapıştırılmış' gibi duran kahverengi, pürüzlü, mum görünümlü iyi "
+            "huylu büyümelerdir. Zararsızdır; ancak görünümü bazen melanomayla "
+            "karışabildiği için doğru ayırt edilmesi önemlidir.",
+        )
+        lezyon_karti(
+            "7. DF (Dermatofibrom)", "df1.jpg",
+            "Çoğunlukla bacaklarda görülen, küçük, sert, kahverengi-pembe bir "
+            "nodüldür. Yanlardan hafifçe sıkıştırıldığında ortası içe çöker "
+            "(gamze belirtisi). Küçük bir travma ya da böcek ısırığı sonrası "
+            "oluşabilir ve tamamen zararsızdır.",
+        )
+        lezyon_karti(
+            "8. VASC (Vasküler Lezyonlar)", "vasc1.jpg",
+            "Genişlemiş damarlardan kaynaklanan kırmızı-mor renkli lekelerdir. "
+            "Kiraz anjiyom, halk arasında 'çilek lekesi' denen hemanjiyom ve "
+            "örümcek anjiyom bu gruba girer. Genellikle tamamen zararsızdır.",
+        )
 
 # ---------------------------------------------------------
 # SEKME 3: SİSTEM DETAYLARI
