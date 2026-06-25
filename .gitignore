@@ -230,3 +230,5 @@ oodtest/
 negatives/
 ISIC_2019_Training_Input/
 ISIC_2019_Training_GroundTruth.csv
+# kart görsellerinin ara/giriş klasörü 
+kart_gorselleri/

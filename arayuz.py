@@ -638,7 +638,7 @@ with sekme_lezyonlar:
     with kanser_kolon:
         st.error("Yüksek Riskli Sınıflar (Malign / Prekanseröz)", icon=":material/emergency:")
         lezyon_karti(
-            "1. MELANOMA", "melanoma.jpg",
+            "1. MELANOMA", "kart_melanoma.jpg",
             "En tehlikeli cilt kanseridir; genellikle mevcut bir benin değişmesiyle "
             "ya da yeni çıkan koyu bir lekeyle başlar. Şüphe uyandıran işaretler: "
             "asimetrik (iki yarısı birbirine benzemeyen) şekil, düzensiz/tırtıklı "
@@ -649,7 +649,7 @@ with sekme_lezyonlar:
             expanded=True,
         )
         lezyon_karti(
-            "2. BCC (Bazal Hücreli Karsinom)", "bcc1.jpg",
+            "2. BCC (Bazal Hücreli Karsinom)", "kart_bcc.jpg",
             "En sık görülen cilt kanseridir, ancak yavaş büyür ve çok nadiren "
             "vücuda yayılır. Genelde yüz, burun ve kulak gibi güneş gören "
             "bölgelerde çıkar. Parlak, inci tanesi gibi küçük bir kabarcık veya "
@@ -657,14 +657,14 @@ with sekme_lezyonlar:
             "görülebilir. Erken tedavide sonuçları çok iyidir.",
         )
         lezyon_karti(
-            "3. SCC (Skuamöz Hücreli Karsinom)", "scc1.jpg",
+            "3. SCC (Skuamöz Hücreli Karsinom)", "kart_scc.jpg",
             "Uzun yıllar süren güneş hasarına bağlı gelişir. Pullu, kabuklu, "
             "kırmızımsı ve sert bir kabartı ya da iyileşmeyen bir yara olarak "
             "ortaya çıkar; zaman zaman hassas veya ağrılı olabilir. BCC'ye göre "
             "yayılma ihtimali daha yüksektir, bu nedenle erken kontrol önemlidir.",
         )
         lezyon_karti(
-            "4. AK (Aktinik Keratoz)", "ak1.jpg",
+            "4. AK (Aktinik Keratoz)", "kart_ak.jpg",
             "Henüz kanser değildir ama kanser öncüsü (prekanseröz) kabul edilir; "
             "tedavi edilmezse zamanla SCC'ye dönüşebilir. Genellikle yüz, saçlı "
             "deri ve el sırtı gibi yıllarca güneş alan yerlerde görülen, kuru, "
@@ -674,7 +674,7 @@ with sekme_lezyonlar:
     with iyi_huylu_kolon:
         st.success("Düşük Riskli Sınıflar (Benign / İyi Huylu)", icon=":material/check_circle:")
         lezyon_karti(
-            "5. NEVUS (Melanositik Nevüs)", "nevus1.jpg",
+            "5. NEVUS (Melanositik Nevüs)", "kart_nevus.jpg",
             "Halk arasında 'ben' olarak bilinen, çoğu insanda bulunan zararsız "
             "lekelerdir. Genellikle düzgün yuvarlak veya oval, tek renkli ve "
             "sınırları belirgindir. Yıllar içinde şekli, rengi veya boyutu "
@@ -683,21 +683,21 @@ with sekme_lezyonlar:
             expanded=True,
         )
         lezyon_karti(
-            "6. BKL (Benign Keratoz)", "bkl1.jpg",
+            "6. BKL (Benign Keratoz)", "kart_bkl.jpg",
             "Genellikle orta ve ileri yaşta ortaya çıkan, cilde sonradan "
             "'yapıştırılmış' gibi duran kahverengi, pürüzlü, mum görünümlü iyi "
             "huylu büyümelerdir. Zararsızdır; ancak görünümü bazen melanomayla "
             "karışabildiği için doğru ayırt edilmesi önemlidir.",
         )
         lezyon_karti(
-            "7. DF (Dermatofibrom)", "df1.jpg",
+            "7. DF (Dermatofibrom)", "kart_df.jpg",
             "Çoğunlukla bacaklarda görülen, küçük, sert, kahverengi-pembe bir "
             "nodüldür. Yanlardan hafifçe sıkıştırıldığında ortası içe çöker "
             "(gamze belirtisi). Küçük bir travma ya da böcek ısırığı sonrası "
             "oluşabilir ve tamamen zararsızdır.",
         )
         lezyon_karti(
-            "8. VASC (Vasküler Lezyonlar)", "vasc1.jpg",
+            "8. VASC (Vasküler Lezyonlar)", "kart_vasc.jpg",
             "Genişlemiş damarlardan kaynaklanan kırmızı-mor renkli lekelerdir. "
             "Kiraz anjiyom, halk arasında 'çilek lekesi' denen hemanjiyom ve "
             "örümcek anjiyom bu gruba girer. Genellikle tamamen zararsızdır.",
