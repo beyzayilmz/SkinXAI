@@ -123,10 +123,12 @@ button[kind="primary"]:hover {
 
 /* ── Sekmeler ───────────────────────────────────────────────── */
 button[data-baseweb="tab"] {
-    font-size: 17px !important; font-weight: 600 !important;
+    font-size: 22px !important; font-weight: 600 !important;
     color: #94A3B8 !important; background-color: transparent !important;
     transition: color 0.2s ease !important;
+    padding: 10px 22px !important;
 }
+button[data-baseweb="tab"] [data-testid="stMarkdownContainer"] p { font-size: 22px !important; }
 button[data-baseweb="tab"]:hover { color: #CBD5E1 !important; }
 button[data-baseweb="tab"][aria-selected="true"] {
     color: #38BDF8 !important; border-bottom: 3px solid #38BDF8 !important;
@@ -232,7 +234,7 @@ button[data-baseweb="tab"][aria-selected="true"] {
 .logo-emblem { filter: drop-shadow(0 0 14px rgba(56,189,248,0.5)); flex-shrink: 0; }
 .logo-text {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 34px; font-weight: 800; line-height: 1;
+    font-size: 46px; font-weight: 800; line-height: 1;
 }
 .logo-text .skin { color: #F1F5F9 !important; }
 .logo-text .xai {
@@ -244,15 +246,15 @@ button[data-baseweb="tab"][aria-selected="true"] {
 }
 @keyframes metin-parla { to { background-position: 200% center; } }
 .logo-sub {
-    font-size: 12px; color: #94A3B8 !important; letter-spacing: 2px;
-    margin-top: 5px; text-transform: uppercase;
+    font-size: 15px; color: #94A3B8 !important; letter-spacing: 2px;
+    margin-top: 6px; text-transform: uppercase;
 }
 .logo-divider {
-    width: 1px; height: 46px;
+    width: 1px; height: 62px;
     background: linear-gradient(180deg, transparent, #475569, transparent);
 }
 .logo-tagline {
-    font-size: 21px; color: #94A3B8 !important; font-weight: 500;
+    font-size: 27px; color: #94A3B8 !important; font-weight: 500;
 }
 /* ── MİMARİ AKIŞ SİMÜLASYONU STİLLERİ ────────────────────────── */
 .mimari-kutu {
@@ -320,12 +322,12 @@ with st.sidebar:
     use_tta = st.toggle("TTA kullan (daha doğru, ~5× yavaş)", value=False)
 
     st.caption(":material/neurology: SkinXAI v6 (EfficientNetV2-S)")
-    st.warning("Yasal Uyarı: Bu yazılım kesin bir tıbbi tanı aracı değildir.", icon=":material/warning:")
+    st.warning("Bu yazılım bir klinik karar destek aracıdır; kesin tanı yerine geçmez, nihai karar hekime aittir.", icon=":material/warning:")
 
 # --- LOGO ---
 logo_html = (
 '<div class="logo-wrap">'
-'<svg class="logo-emblem" width="93" height="93" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
+'<svg class="logo-emblem" width="122" height="122" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
 '<defs>'
 '<linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">'
 '<stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#38BDF8"/>'
@@ -357,9 +359,9 @@ logo_html = (
 )
 st.markdown(logo_html, unsafe_allow_html=True)
 
-sekme_analiz, sekme_lezyonlar, sekme_detay, sekme_ekip = st.tabs([
+sekme_analiz, sekme_lezyonlar, sekme_hakkinda = st.tabs([
     ":material/biotech: Analiz Paneli", ":material/menu_book: Lezyon Sınıfları",
-    ":material/description: Sistem Detayları", ":material/groups: Geliştirici Ekip"
+    ":material/info: Hakkında"
 ])
 
 # ---------------------------------------------------------
@@ -369,16 +371,9 @@ with sekme_analiz:
     st.markdown("#### *Yapay Zeka Destekli Dermatolojik Ön Değerlendirme Platformu*")
     st.divider()
 
-    sol_islem, sag_islem = st.columns([1, 1], gap="large")
+    _sol_bosluk, orta_panel, _sag_bosluk = st.columns([1, 3, 1])
 
-    with sol_islem:
-        st.markdown('<div class="custom-header">Proje Özeti ve Amacı</div>', unsafe_allow_html=True)
-        st.write("Bu platform, dermatoskopik görüntüleri analiz ederek cilt lezyonlarını yapay zeka algoritmalarıyla sınıflandıran bir **Klinik Karar Destek Sistemidir**.")
-        st.info("**Temel Hedef:** Teşhis sürecinde hekimlere ikinci bir görüş sunarak tanı doğruluğunu artırmak ve biyopsi süreçlerini optimize etmektir.", icon=":material/target:")
-        st.success("**Veri ve Model:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü), EfficientNetV2-S backbone (v6).", icon=":material/bar_chart:")
-        st.warning("**Güvenlik Protokolü:** Riskli lezyonları kaçırmamak adına algoritmik olarak güvenlik odaklı kalibre edilmiştir.", icon=":material/shield:")
-
-    with sag_islem:
+    with orta_panel:
         st.markdown('<div class="custom-header">Teşhis ve Analiz Motoru</div>', unsafe_allow_html=True)
         st.write("Örnek görselleri kullanabilir veya kendi fotoğrafınızı yükleyebilirsiniz.")
 
@@ -537,17 +532,17 @@ with sekme_analiz:
                     st.markdown(f"""
                     <div class="kirmizi-risk">🚨 YÜKSEK RİSK 🚨<br>
                     <span style="font-size:14px;font-weight:normal;">
-                    {tam_ad} tespit edildi. Acilen dermatoloğa başvurunuz.</span></div>
+                    {tam_ad} — malign/prekanseröz lezyon olasılığı yüksek. Biyopsi ve histopatolojik doğrulama değerlendirilmelidir.</span></div>
                     """, unsafe_allow_html=True)
                 elif uyari_var:
                     uyari_cls, uyari_prob = result["risk_warnings"][0]
                     st.markdown(f"""
                     <div class="sari-uyari">⚠️ ŞÜPHELİ DURUM ⚠️<br>
                     <span style="font-size:14px;font-weight:normal;">
-                    Genel tahmin: {tahmin_edilen} — ancak {CLASS_INFO[uyari_cls]} olasılığı %{int(uyari_prob*100)} seviyesinde. Kontrol önerilir.</span></div>
+                    Öne çıkan sınıf: {tahmin_edilen} — ancak {CLASS_INFO[uyari_cls]} olasılığı %{int(uyari_prob*100)} seviyesinde. Ayırıcı tanıda göz önünde bulundurulmalı.</span></div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.success("Riskli bir bulguya rastlanmadı.", icon=":material/check_circle:")
+                    st.success("Modelce belirgin malign/riskli bulgu işaretlenmedi. Nihai değerlendirme klinik muayene ile yapılmalıdır.", icon=":material/check_circle:")
 
                 # Expert probs (cascade varsa)
                 if result.get("expert_probs"):
@@ -555,7 +550,7 @@ with sekme_analiz:
                     for cls, prob in sorted(result["expert_probs"].items(), key=lambda x: -x[1]):
                         st.caption(f"{cls}: %{int(prob*100)}")
 
-                st.warning("**Yasal Uyarı:** Bu analiz kesin tıbbi tanı koymaz.", icon=":material/warning:")
+                st.warning("**Not:** Bu bir karar destek çıktısıdır; nihai tanı ve tedavi kararı hekime aittir.", icon=":material/warning:")
 
             # Grafik — tüm 8 sınıf
             with sonuc_col3:
@@ -597,26 +592,27 @@ with sekme_analiz:
             if st.session_state.gradcam_overlay is not None:
                 st.write("")
                 st.divider()
-                st.write("#### Modelin Odak Haritası (Grad-CAM)")
+                st.write("#### Modelin Odak Haritası")
                 gradcam_gorsel, gradcam_metin = st.columns([1, 1.3], gap="large")
                 with gradcam_gorsel:
                     st.image(st.session_state.gradcam_overlay, use_container_width=True)
                 with gradcam_metin:
                     st.markdown(
                         f"""
-Bu görsel, modelin **{tahmin_edilen.upper()}** sonucuna varırken fotoğrafın
+<div style="font-size:18px; line-height:1.65;">
+Bu görsel, modelin <b>{tahmin_edilen.upper()}</b> sonucuna varırken fotoğrafın
 hangi bölgesine baktığını gösterir. Renkler şu anlama gelir:
-
-- **Kırmızı bölgeler:** Modelin kararını verirken en çok önem verdiği,
-  belirleyici alanlardır.
-- **Sarı ve yeşil bölgeler:** Daha az etkili olan, orta önemdeki alanlardır.
-- **Mavi bölgeler:** Modelin pek dikkate almadığı, kararına etkisi az olan
-  alanlardır; çoğunlukla lezyonun çevresindeki sağlıklı cilt buraya düşer.
-
+<ul style="margin-top:8px;">
+<li><b>Kırmızı bölgeler:</b> Modelin kararını verirken en çok önem verdiği, belirleyici alanlardır.</li>
+<li><b>Sarı ve yeşil bölgeler:</b> Daha az etkili olan, orta önemdeki alanlardır.</li>
+<li><b>Mavi bölgeler:</b> Modelin pek dikkate almadığı, kararına etkisi az olan alanlardır; çoğunlukla lezyonun çevresindeki sağlıklı cilt buraya düşer.</li>
+</ul>
 Beklenen durum, kırmızı bölgelerin lezyonun kendisi üzerinde toplanmasıdır.
 Eğer model lezyon yerine kenarlara, kıllara ya da sağlıklı cilde
 odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
-"""
+</div>
+""",
+                        unsafe_allow_html=True,
                     )
 
 # ---------------------------------------------------------
@@ -708,22 +704,22 @@ with sekme_lezyonlar:
         )
 
 # ---------------------------------------------------------
-# SEKME 3: SİSTEM DETAYLARI
+# SEKME 3: HAKKINDA
 # ---------------------------------------------------------
-with sekme_detay:
-    st.markdown('<div class="custom-header">Sistem Mimarisi ve Teknik Detaylar</div>', unsafe_allow_html=True)
-    st.write("**Backbone:** EfficientNetV2-S (20.8M parametre, timm kütüphanesi)")
-    st.write("**Eğitim Verisi:** HAM10000 + ISIC 2019 + ISIC 2020 (~41K görüntü, 8 sınıf)")
-    st.write("**Model:** v6 — EfficientNetV2-S backbone, sınıf bazlı ağırlıklandırılmış kayıp fonksiyonu")
-    st.write("**TTA:** 5 transform ortalaması (normal, hflip, vflip, centercrop, rotate)")
-    st.write("**Temiz Test Seti Sonucu:** Accuracy %82.0, Macro F1 0.702")
-    st.write("**Not:** v3+v6 ensemble ve expert/cascade mimarileri ayrıca denenmiş, titiz ablasyon testinde v6 tek başına en güvenilir/dengeli sonucu verdiği için final model olarak seçilmiştir.")
+with sekme_hakkinda:
+    st.markdown('<div class="custom-header">Proje Hakkında</div>', unsafe_allow_html=True)
+    st.write("SkinXAI, cilt lezyonu görüntülerini yapay zeka ile inceleyip hekime hızlı bir ön değerlendirme sunan bir **klinik karar destek aracıdır**. Amacı kesin teşhis koymak değil; hekime açıklanabilir bir ikinci görüş sağlayarak riskli lezyonların gözden kaçmasını azaltmaktır.")
 
-# ---------------------------------------------------------
-# SEKME 4: GELİŞTİRİCİ EKİP
-# ---------------------------------------------------------
-with sekme_ekip:
-    st.markdown('<div class="custom-header">Proje Ekibi</div>', unsafe_allow_html=True)
+    st.info("**Ne işe yarar?** Lezyon görüntüsünü inceler, olası türünü ve risk durumunu gösterir; şüpheli/riskli bulguları işaretleyerek hekimin ileri değerlendirmesine (biyopsi, ayırıcı tanı) yardımcı olur.", icon=":material/target:")
+    st.warning("**Önemli:** Bu bir karar destek aracıdır, kesin tanı yerine geçmez. Nihai tanı ve tedavi kararı hekime aittir.", icon=":material/shield:")
+
+    st.markdown('<div class="custom-header" style="font-size:18px;margin-top:24px;">Neler Sunar?</div>', unsafe_allow_html=True)
+    st.write("- **Kararın görsel açıklaması:** Modelin fotoğrafın hangi bölgesine bakarak karar verdiğini renkli bir ısı haritasıyla gösterir; böylece sonucun nedeni görülebilir.")
+    st.write("- **Uygun olmayan görsel uyarısı:** Yüklenen görüntü bir cilt lezyonu değilse (örneğin yüz, nesne ya da ekran görüntüsü) bunu fark eder ve uyarır.")
+    st.write("- **Riskli durum uyarısı:** Riskli bir lezyon olasılığı varsa, ana tahmin farklı olsa bile sizi uyarır — riskli durumları kaçırmamaya öncelik verir.")
+    st.write("- **Çok sayıda gerçek lezyon görüntüsüyle eğitilmiştir** ve sekiz farklı lezyon türünü tanıyabilir.")
+
+    st.markdown('<div class="custom-header" style="font-size:18px;margin-top:24px;">Geliştirici Ekip</div>', unsafe_allow_html=True)
     st.write("**Beyza YILMAZ** - Model Eğitimi, Veri İşleme ve Backend Entegrasyonu")
     st.write("**Dilara KULOĞLU** - Yapay Zeka Model Mimarisi, Grad-CAM Görselleştirmeleri")
     st.write("**Fatma Gizem İNANBAK** - Model Eğitimi, Veri İşleme")

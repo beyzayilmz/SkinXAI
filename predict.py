@@ -541,18 +541,18 @@ def predict_image(
     # ── Uyarı mesajı ─────────────────────────────────────────
     if is_risk:
         warning = (
-            f"⚠️ Bu lezyon riskli görünüyor ({CLASS_INFO[pred_class]}). "
-            "Lütfen bir dermatoloğa danışın."
+            f"⚠️ Riskli lezyon olasılığı ({CLASS_INFO[pred_class]}). "
+            "Biyopsi/ileri inceleme değerlendirilmelidir."
         )
     elif risk_warnings:
         top_cls, top_prob = risk_warnings[0]
         warning = (
-            f"⚠️ Tespit: {CLASS_INFO[pred_class]} — "
+            f"⚠️ Öne çıkan sınıf: {CLASS_INFO[pred_class]} — "
             f"ancak {CLASS_INFO[top_cls]} olasılığı %{top_prob*100:.0f} seviyesinde. "
-            "Bir dermatoloğa danışmanızı öneririz."
+            "Ayırıcı tanıda göz önünde bulundurulmalı."
         )
     elif uncertain:
-        warning = "🔍 Model bu görüntüden emin değil. Daha net bir fotoğraf deneyin veya uzman görüşü alın."
+        warning = "🔍 Model bu görüntüden emin değil; düşük güven, klinik korelasyon önerilir."
     else:
         warning = None
 
