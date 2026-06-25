@@ -270,6 +270,86 @@ def _img_to_numpy(image_input) -> np.ndarray:
         raise TypeError(f"Desteklenmeyen girdi tipi: {type(image_input)}")
 
 
+# GİRDİ DENETİMİ — "Bu görüntü bir cilt lezyonu mu?" (OOD)
+
+def assess_skin_image(img_rgb: np.ndarray) -> dict:
+    """
+    Yüklenen görüntünün dermatoskopik bir cilt lezyonuna benzeyip
+    benzemediğini hafif görüntü-sezgisiyle değerlendirir.
+
+    Model bir softmax sınıflandırıcı olduğu için kendisine verilen HER
+    görüntüyü 8 sınıftan birine zorlar. Bu fonksiyon, sınıflandırma öncesi bir kapı görevi
+    görerek "bu bir cilt lezyonu değil" durumunu yakalar ve uyarı üretir.
+
+    """
+    img = cv2.resize(img_rgb, (224, 224)).astype(np.float32)
+    brightness = float(img.mean())
+    hsv = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_RGB2HSV)
+    H, S, V = hsv[..., 0].astype(np.float32), hsv[..., 1], hsv[..., 2]
+    skin_ratio = float((((H <= 35) | (H >= 160)) & (S > 25) & (V > 40)).mean())
+    saturation = float(S.mean())
+
+    reason = None
+    if brightness < 90:
+        reason = "Görüntü çok karanlık; dermatoskopik bir cilt görüntüsüne benzemiyor."
+    elif saturation < 15:
+        reason = "Görüntü gri tonlu (renksiz); bir belge veya ekran görüntüsü olabilir."
+    elif skin_ratio < 0.08:
+        reason = "Görüntüde cilt/lezyon rengi bulunamadı; bir cilt lezyonu fotoğrafı olmayabilir."
+
+    return {
+        "is_skin_like": reason is None,
+        "reason": reason,
+        "metrics": {
+            "brightness": round(brightness, 1),
+            "saturation": round(saturation, 1),
+            "skin_ratio": round(skin_ratio, 3),
+        },
+    }
+
+
+
+# OOD  — "Cilt-lezyonu / değil" ikili sınıflandırıcı
+_GATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skin_gate.npz")
+_skin_gate = None
+
+
+def _load_skin_gate():
+    """skin_gate.npz'i (w, b, threshold) yükler ve önbelleğe alır."""
+    global _skin_gate
+    if _skin_gate is None:
+        if os.path.exists(_GATE_PATH):
+            g = np.load(_GATE_PATH)
+            _skin_gate = (g["w"].astype(np.float32), float(g["b"]), float(g["threshold"]))
+        else:
+            _skin_gate = (None, 0.0, 0.35)   # kapı dosyası yoksa devre dışı
+    return _skin_gate
+
+
+@torch.no_grad()
+def _embed_backbone(model, device, img_rgb: np.ndarray, tfm) -> np.ndarray:
+    """Modelin omurgasından L2-normalize edilmiş özellik vektörü döner."""
+    t = tfm(image=img_rgb)["image"].unsqueeze(0).to(device)
+    f = model.backbone(t)[0].detach().cpu().numpy().astype(np.float32)
+    return f / (np.linalg.norm(f) + 1e-8)
+
+
+def skin_gate_score(model, device, img_rgb: np.ndarray):
+    """
+    Eğitilmiş ikili kapının 'cilt-lezyonu' olasılığını döner (0–1).
+    Kapı dosyası yoksa None döner (kapı devre dışı kalır).
+    """
+    w, b, _ = _load_skin_gate()
+    if w is None:
+        return None
+    q = _embed_backbone(model, device, img_rgb, _base_tfm())
+    return float(1.0 / (1.0 + np.exp(-(q @ w + b))))
+
+
+def skin_gate_threshold() -> float:
+    return _load_skin_gate()[2]
+
+
 def _per_class_ensemble(p3: np.ndarray, p6: np.ndarray) -> np.ndarray:
     """
     Her sınıf için ayrı ağırlıkla v3 + v6 karıştırır.
@@ -335,6 +415,9 @@ def predict_image(
     img = _img_to_numpy(image_input)
     tfm = _base_tfm()
 
+    #  Girdi denetimi: bu görüntü bir cilt lezyonu mu?
+    input_check = assess_skin_image(img)
+
     # ── Stage 1: Ana ensemble olasılık vektörü ────────────────
     if ensemble:
         if v3_path is None:
@@ -349,6 +432,7 @@ def predict_image(
 
         model_v3, device = _model_cache["v3"]
         model_v6, _      = _model_cache["v6"]
+        _ood_model, _ood_device = model_v6, device
 
         if use_tta:
             p3 = _infer_tta(model_v3, device, img)
@@ -372,11 +456,27 @@ def predict_image(
             model_path = os.environ.get("MODEL_PATH", "skinxai_v3_best.pth")
         model, device = load_model(model_path, version)
         probs = _infer_tta(model, device, img) if use_tta else _infer_single(model, device, img, tfm)
+        _ood_model, _ood_device = model, device
         mode  = "single"
 
     # Stage 1 argmax
     pred_idx   = int(np.argmax(probs))
     pred_class = CLASS_NAMES[pred_idx]
+
+    # Girdi denetimi (2): öğrenilmiş "cilt-lezyonu / değil" 
+    # Renk denetimi geçtiyse, eğitilmiş ikili kapıya da sor: görüntü bir cilt
+    # lezyonuna benzemiyorsa  OOD kabul et.
+    gate_prob = None
+    if input_check["is_skin_like"]:
+        gate_prob = skin_gate_score(_ood_model, _ood_device, img)
+        if gate_prob is not None and gate_prob < skin_gate_threshold():
+            input_check = {
+                "is_skin_like": False,
+                "reason": "Görüntü bir cilt lezyonuna benzemiyor; "
+                          "bir cilt lezyonu fotoğrafı olmayabilir.",
+                "metrics": {**input_check.get("metrics", {}),
+                            "gate_prob": round(gate_prob, 3)},
+            }
 
     # ── Stage 2: Expert Cascade ───────────────────────────────
     expert_probs      = None
@@ -469,6 +569,9 @@ def predict_image(
         "warning":           warning,
         "mode":              mode,
         "cascade_triggered": cascade_triggered,
+        "input_is_skin_like": input_check["is_skin_like"],
+        "input_warning":      input_check["reason"],
+        "input_gate_prob":    gate_prob,
     }
 
 

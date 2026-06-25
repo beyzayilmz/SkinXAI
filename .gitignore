@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SkinXAI — OOD kapısı eğitim verileri 
+
+
+# STL-10 + indirilen negatifler (~5GB)
+_ooddata/
+# ISIC 2019 lezyon görselleri (~900MB)
+dataset/
+# OOD test görselleri
+oodtest/
+# negatif çapa görselleri
+negatives/
+ISIC_2019_Training_Input/
+ISIC_2019_Training_GroundTruth.csv

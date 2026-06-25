@@ -454,17 +454,20 @@ with sekme_analiz:
                             st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
 
                         # ── AÇIKLANABİLİRLİK: Grad-CAM ısı haritası ──────────────
-                        with st.spinner("Açıklanabilirlik haritası (Grad-CAM) oluşturuluyor..."):
-                            try:
-                                model_v6, _ = load_model(V6_PATH, "v6")
-                                gc = generate_gradcam(
-                                    model_v6, img_input,
-                                    class_name=st.session_state.analiz_sonucu["predicted_class"],
-                                )
-                                st.session_state.gradcam_overlay = gc["overlay"]
-                            except Exception as e:
-                                st.session_state.gradcam_overlay = None
-                                st.warning(f"Grad-CAM oluşturulamadı: {e}")
+                        # Girdi cilt lezyonuna benzemiyorsa Grad-CAM üretme (anlamsız olur)
+                        st.session_state.gradcam_overlay = None
+                        if st.session_state.analiz_sonucu.get("input_is_skin_like", True):
+                            with st.spinner("Açıklanabilirlik haritası (Grad-CAM) oluşturuluyor..."):
+                                try:
+                                    model_v6, _ = load_model(V6_PATH, "v6")
+                                    gc = generate_gradcam(
+                                        model_v6, img_input,
+                                        class_name=st.session_state.analiz_sonucu["predicted_class"],
+                                    )
+                                    st.session_state.gradcam_overlay = gc["overlay"]
+                                except Exception as e:
+                                    st.session_state.gradcam_overlay = None
+                                    st.warning(f"Grad-CAM oluşturulamadı: {e}")
 
                         st.session_state.analiz_yapildi = True
 
@@ -480,104 +483,127 @@ with sekme_analiz:
         yuksek_risk         = result["is_high_risk"]
         uyari_var           = bool(result["risk_warnings"])
         cascade_tetiklendi  = result.get("cascade_triggered", False)
+        gecersiz_girdi      = not result.get("input_is_skin_like", True)
 
         st.markdown('<div class="custom-header">Analiz Sonucu ve Raporlama</div>', unsafe_allow_html=True)
         st.divider()
-        sonuc_col1, sonuc_col2, sonuc_col3 = st.columns(3, gap="medium")
 
-        # Görüntü
-        with sonuc_col1:
-            st.write("#### İncelenen Görüntü")
-            st.image(st.session_state.img_pil or st.session_state.secilen_resim_yolu,
-                     use_container_width=True)
-            if cascade_tetiklendi:
-                st.caption(":material/sync: Cascade (uzman model) devreye girdi")
+        # Girdi bir cilt lezyonuna benzemiyorsa: sadece uyarı + yüklenen görsel.
+        # Tahmin / grafik / Grad-CAM gösterilmez (cilt lezyonu olmayan görüntü
+        # için anlamsız olacağından).
+        if gecersiz_girdi:
+            st.error(
+                result.get("input_warning")
+                or "Bu görüntü dermatoskopik bir cilt lezyonuna benzemiyor.",
+                icon=":material/report:",
+            )
+            st.caption(
+                "Model her görüntüyü 8 sınıftan birine yerleştirmek zorundadır; "
+                "bu nedenle cilt lezyonu olmayan bir görüntü için anlamlı bir tahmin "
+                "üretemez. Lütfen net bir dermatoskopik/cilt fotoğrafı yükleyin."
+            )
+            gorsel_kol, _bos = st.columns([1, 2], gap="large")
+            with gorsel_kol:
+                st.write("#### Yüklenen Görüntü")
+                st.image(st.session_state.img_pil or st.session_state.secilen_resim_yolu,
+                         use_container_width=True)
 
-        # Tahmin ve uyarı
-        with sonuc_col2:
-            st.write(f"### Tahmin: **{tahmin_edilen.upper()}**")
-            st.write(f"**{tam_ad}**")
-            st.markdown(f"""
-            <div class="guven-karti">
-                <div class="etiket">Model Güven Skoru</div>
-                <div class="deger">%{guven_skoru}</div>
-                <div class="guven-bar-dis">
-                    <div class="guven-bar-ic" style="width: {guven_skoru}%;"></div>
+        else:
+            sonuc_col1, sonuc_col2, sonuc_col3 = st.columns(3, gap="medium")
+
+            # Görüntü
+            with sonuc_col1:
+                st.write("#### İncelenen Görüntü")
+                st.image(st.session_state.img_pil or st.session_state.secilen_resim_yolu,
+                         use_container_width=True)
+                if cascade_tetiklendi:
+                    st.caption(":material/sync: Cascade (uzman model) devreye girdi")
+
+            # Tahmin ve uyarı
+            with sonuc_col2:
+                st.write(f"### Tahmin: **{tahmin_edilen.upper()}**")
+                st.write(f"**{tam_ad}**")
+                st.markdown(f"""
+                <div class="guven-karti">
+                    <div class="etiket">Model Güven Skoru</div>
+                    <div class="deger">%{guven_skoru}</div>
+                    <div class="guven-bar-dis">
+                        <div class="guven-bar-ic" style="width: {guven_skoru}%;"></div>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            if yuksek_risk:
-                st.markdown(f"""
-                <div class="kirmizi-risk">🚨 YÜKSEK RİSK 🚨<br>
-                <span style="font-size:14px;font-weight:normal;">
-                {tam_ad} tespit edildi. Acilen dermatoloğa başvurunuz.</span></div>
                 """, unsafe_allow_html=True)
-            elif uyari_var:
-                uyari_cls, uyari_prob = result["risk_warnings"][0]
-                st.markdown(f"""
-                <div class="sari-uyari">⚠️ ŞÜPHELİ DURUM ⚠️<br>
-                <span style="font-size:14px;font-weight:normal;">
-                Genel tahmin: {tahmin_edilen} — ancak {CLASS_INFO[uyari_cls]} olasılığı %{int(uyari_prob*100)} seviyesinde. Kontrol önerilir.</span></div>
-                """, unsafe_allow_html=True)
-            else:
-                st.success("Riskli bir bulguya rastlanmadı.", icon=":material/check_circle:")
 
-            # Expert probs (cascade varsa)
-            if result.get("expert_probs"):
-                st.write("**Uzman model (ak/bkl/df/scc):**")
-                for cls, prob in sorted(result["expert_probs"].items(), key=lambda x: -x[1]):
-                    st.caption(f"{cls}: %{int(prob*100)}")
+                if yuksek_risk:
+                    st.markdown(f"""
+                    <div class="kirmizi-risk">🚨 YÜKSEK RİSK 🚨<br>
+                    <span style="font-size:14px;font-weight:normal;">
+                    {tam_ad} tespit edildi. Acilen dermatoloğa başvurunuz.</span></div>
+                    """, unsafe_allow_html=True)
+                elif uyari_var:
+                    uyari_cls, uyari_prob = result["risk_warnings"][0]
+                    st.markdown(f"""
+                    <div class="sari-uyari">⚠️ ŞÜPHELİ DURUM ⚠️<br>
+                    <span style="font-size:14px;font-weight:normal;">
+                    Genel tahmin: {tahmin_edilen} — ancak {CLASS_INFO[uyari_cls]} olasılığı %{int(uyari_prob*100)} seviyesinde. Kontrol önerilir.</span></div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.success("Riskli bir bulguya rastlanmadı.", icon=":material/check_circle:")
 
-            st.warning("**Yasal Uyarı:** Bu analiz kesin tıbbi tanı koymaz.", icon=":material/warning:")
+                # Expert probs (cascade varsa)
+                if result.get("expert_probs"):
+                    st.write("**Uzman model (ak/bkl/df/scc):**")
+                    for cls, prob in sorted(result["expert_probs"].items(), key=lambda x: -x[1]):
+                        st.caption(f"{cls}: %{int(prob*100)}")
 
-        # Grafik — tüm 8 sınıf
-        with sonuc_col3:
-            # Cascade tetiklendiyse expert probs'u göster, yoksa Stage 1 probs
-            if cascade_tetiklendi and result.get("expert_probs"):
-                st.write("#### Uzman Model Dağılımı")
-                st.caption("(cascade aktif — ak/bkl/df/scc)")
-                probs_raw = result["expert_probs"]
-                veri = pd.DataFrame({
-                    "Hastalık": [k.upper() for k in probs_raw.keys()],
-                    "İhtimal":  [round(v * 100, 1) for v in probs_raw.values()],
-                })
-            else:
-                st.write("#### Olasılık Dağılımları")
-                probs_raw = result["all_probs"]
-                veri = pd.DataFrame({
-                    "Hastalık": [k.upper() for k in probs_raw.keys()],
-                    "İhtimal":  [round(v * 100, 1) for v in probs_raw.values()],
-                }).sort_values("İhtimal", ascending=False)
+                st.warning("**Yasal Uyarı:** Bu analiz kesin tıbbi tanı koymaz.", icon=":material/warning:")
 
-            fig = px.pie(
-                veri, values="İhtimal", names="Hastalık", hole=0.4,
-                color_discrete_sequence=px.colors.sequential.Tealgrn,
-            )
-            fig.update_traces(
-                textposition="inside", textinfo="percent+label",
-                marker=dict(line=dict(color="#1E293B", width=2)),
-            )
-            fig.update_layout(
-                showlegend=False,
-                margin=dict(t=0, b=0, l=0, r=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="#CBD5E1"),
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            # Grafik — tüm 8 sınıf
+            with sonuc_col3:
+                # Cascade tetiklendiyse expert probs'u göster, yoksa Stage 1 probs
+                if cascade_tetiklendi and result.get("expert_probs"):
+                    st.write("#### Uzman Model Dağılımı")
+                    st.caption("(cascade aktif — ak/bkl/df/scc)")
+                    probs_raw = result["expert_probs"]
+                    veri = pd.DataFrame({
+                        "Hastalık": [k.upper() for k in probs_raw.keys()],
+                        "İhtimal":  [round(v * 100, 1) for v in probs_raw.values()],
+                    })
+                else:
+                    st.write("#### Olasılık Dağılımları")
+                    probs_raw = result["all_probs"]
+                    veri = pd.DataFrame({
+                        "Hastalık": [k.upper() for k in probs_raw.keys()],
+                        "İhtimal":  [round(v * 100, 1) for v in probs_raw.values()],
+                    }).sort_values("İhtimal", ascending=False)
 
-        # AÇIKLANABİLİRLİK: Grad-CAM — kolonların altında, görsel solda + metin sağda
-        if st.session_state.gradcam_overlay is not None:
-            st.write("")
-            st.divider()
-            st.write("#### Modelin Odak Haritası (Grad-CAM)")
-            gradcam_gorsel, gradcam_metin = st.columns([1, 1.3], gap="large")
-            with gradcam_gorsel:
-                st.image(st.session_state.gradcam_overlay, use_container_width=True)
-            with gradcam_metin:
-                st.markdown(
-                    f"""
+                fig = px.pie(
+                    veri, values="İhtimal", names="Hastalık", hole=0.4,
+                    color_discrete_sequence=px.colors.sequential.Tealgrn,
+                )
+                fig.update_traces(
+                    textposition="inside", textinfo="percent+label",
+                    marker=dict(line=dict(color="#1E293B", width=2)),
+                )
+                fig.update_layout(
+                    showlegend=False,
+                    margin=dict(t=0, b=0, l=0, r=0),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#CBD5E1"),
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            # AÇIKLANABİLİRLİK: Grad-CAM — kolonların altında, görsel solda + metin sağda
+            if st.session_state.gradcam_overlay is not None:
+                st.write("")
+                st.divider()
+                st.write("#### Modelin Odak Haritası (Grad-CAM)")
+                gradcam_gorsel, gradcam_metin = st.columns([1, 1.3], gap="large")
+                with gradcam_gorsel:
+                    st.image(st.session_state.gradcam_overlay, use_container_width=True)
+                with gradcam_metin:
+                    st.markdown(
+                        f"""
 Bu görsel, modelin **{tahmin_edilen.upper()}** sonucuna varırken fotoğrafın
 hangi bölgesine baktığını gösterir. Renkler şu anlama gelir:
 
@@ -591,7 +617,7 @@ Beklenen durum, kırmızı bölgelerin lezyonun kendisi üzerinde toplanmasıdı
 Eğer model lezyon yerine kenarlara, kıllara ya da sağlıklı cilde
 odaklanmışsa, sonucu temkinli değerlendirmek gerekir.
 """
-                )
+                    )
 
 # ---------------------------------------------------------
 # SEKME 2: LEZYON SINIFLARI
