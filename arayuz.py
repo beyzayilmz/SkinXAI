@@ -1,4 +1,5 @@
 import os
+import gc
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,6 +7,7 @@ from PIL import Image
 import numpy as np
 from PIL import Image, ImageOps
 import time # Animasyon zamanlaması için
+import torch
 
 # ── Model entegrasyonu ───────────────────────────────────────────
 from predict import predict_image, load_ensemble, CLASS_INFO, HIGH_RISK
@@ -447,6 +449,7 @@ with sekme_analiz:
 
                         with st.spinner("Analiz yapılıyor..."):
                             st.session_state.analiz_sonucu = tahmin_yap(img_input, use_tta=use_tta)
+                        gc.collect()  # inference sonrası belleği boşalt
 
                         # ── AÇIKLANABİLİRLİK: Grad-CAM ısı haritası ──────────────
                         # Girdi cilt lezyonuna benzemiyorsa Grad-CAM üretme (anlamsız olur)
@@ -455,14 +458,19 @@ with sekme_analiz:
                             with st.spinner("Açıklanabilirlik haritası (Grad-CAM) oluşturuluyor..."):
                                 try:
                                     model_v6, _ = load_model(V6_PATH, "v6")
-                                    gc = generate_gradcam(
+                                    gradcam_result = generate_gradcam(
                                         model_v6, img_input,
                                         class_name=st.session_state.analiz_sonucu["predicted_class"],
                                     )
-                                    st.session_state.gradcam_overlay = gc["overlay"]
+                                    st.session_state.gradcam_overlay = gradcam_result["overlay"]
                                 except Exception as e:
                                     st.session_state.gradcam_overlay = None
                                     st.warning(f"Grad-CAM oluşturulamadı: {e}")
+                                finally:
+                                    # Bellek temizliği — backprop sonrası RAM boşalt
+                                    gc.collect()
+                                    if torch.cuda.is_available():
+                                        torch.cuda.empty_cache()
 
                         st.session_state.analiz_yapildi = True
 
